@@ -1,4 +1,5 @@
 from functools import reduce
+from operator import concat
 
 
 def read_input(fname):
@@ -7,24 +8,15 @@ def read_input(fname):
 
 
 def get_group_set(grp):
-    # Get list of answers for each person in group
-    people = [list(x) for x in grp]
-
-    # Flatten the list of everyone's answers and create a set
-    return set([answer for person in people for answer in person])
+    # Get list of answers for each person in group then flatten the
+    # list of everyone's answers and create a set
+    return set(reduce(concat, [list(x) for x in grp]))
 
 
 def get_group_intersection(grp):
-    # Create a set for each person's answers
-    people = [set(x) for x in grp]
-
-    # Fold each person's answer set with the previous to produce a set
-    # of answers given by each person
-    return reduce(
-        lambda s, x: s.intersection(x),
-        people[1:],
-        set(people[0])
-    )
+    # Create a set for each person's answers then fold set with the
+    # previous to produce a set of answers given by everyone
+    return reduce(lambda s, x: s & x, [set(x) for x in grp])
 
 
 def solve_p1(inp):
