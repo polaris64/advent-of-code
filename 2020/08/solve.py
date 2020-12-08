@@ -9,10 +9,10 @@ def read_input(fname):
 def parse_instr(line):
     match = re.match(r"^([a-z]+) ([+-][0-9]+)$", line)
     if not match:
-        raise "ParseException"
+        raise Exception("ParseException")
     groups = match.groups()
     if len(groups) != 2:
-        raise "ParseException"
+        raise Exception("ParseException")
     return {"opcode": groups[0], "operand": int(groups[1]), "hits": 0}
 
 
@@ -22,10 +22,10 @@ def create_context(prog):
 
 def run_program(ctx):
     while True:
-        if ctx["pc"] < 0 or ctx["pc" ]>= len(ctx["mem"]):
+        if ctx["pc"] < 0 or ctx["pc"] >= len(ctx["mem"]):
             return
         instr = ctx["mem"][ctx["pc"]]
-        ctx["mem"][ctx["pc"]]["hits"] += 1
+        instr["hits"] += 1
         if instr["opcode"] == "acc":
             ctx["acc"] += instr["operand"]
             ctx["pc"] += 1
@@ -36,15 +36,16 @@ def run_program(ctx):
         yield ctx
 
 
-def flip_opcode(prog, opcode):
-    prog[opcode]["opcode"] = "jmp" if prog[opcode] == "nop" else "nop"
+def flip_opcode(prog, idx):
+    if prog[idx]["opcode"] in ["nop", "jmp"]:
+        prog[idx]["opcode"] = "jmp" if prog[idx]["opcode"] == "nop" else "nop"
+        return True
+    return False
 
 
 def mutate_prog(prog, target_opcode):
     while target_opcode < len(prog):
-        opcode = prog[target_opcode]["opcode"]
-        if opcode == "nop" or opcode == "jmp":
-            flip_opcode(prog, target_opcode)
+        if flip_opcode(prog, target_opcode):
             return target_opcode + 1
         target_opcode += 1
     return None
@@ -52,16 +53,16 @@ def mutate_prog(prog, target_opcode):
 
 def mutate_and_test(initial_prog):
     target_opcode = 0
-    while True:
+    while target_opcode is not None:
         prog = [x.copy() for x in initial_prog]
         target_opcode = mutate_prog(prog, target_opcode)
-        if target_opcode is None:
-            return None
-        for ctx in run_program(create_context(prog)):
-            if ctx["pc"] >= len(ctx["mem"]):
-                return ctx["acc"]
-            if any([x["hits"] > 1 for x in ctx["mem"]]):
-                break
+        if target_opcode is not None:
+            for ctx in run_program(create_context(prog)):
+                if ctx["pc"] >= len(ctx["mem"]):
+                    return ctx["acc"]
+                if any([x["hits"] > 1 for x in ctx["mem"]]):
+                    break
+    return None
 
 
 def solve_p1(inp):
@@ -70,6 +71,7 @@ def solve_p1(inp):
         if any([x["hits"] > 1 for x in ctx["mem"]]):
             return acc
         acc = ctx["acc"]
+    return None
 
 
 def solve_p2(inp):
@@ -85,7 +87,6 @@ def main():
 
 
 def test_main():
-    pass
     inp = read_input("input.txt")
     assert solve_p1(inp) == 1262
     assert solve_p2(inp) == 1643
