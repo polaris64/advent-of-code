@@ -33,8 +33,9 @@ def solve_p1(inp, preamble_len):
 
 def solve_p2(inp, target_num):
     for i in range(1, len(inp)):
+        range_sum = inp[i]
         for j in range(i + 1, len(inp)):
-            range_sum = sum(inp[i:j])
+            range_sum += inp[j]
             if range_sum > target_num:
                 break
             if range_sum == target_num:
