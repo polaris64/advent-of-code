@@ -22,11 +22,10 @@ def get_next_bus_times(notes):
 
 def get_earliest_timestamp(bus_ids):
     ids = [(start, int(id)) for (start, id) in enumerate(bus_ids) if id != 'x']
-    print(ids)
     timestamp = 0
     mult = 1
     for (offset, bid) in ids:
-        while(timestamp + offset) % bid != 0:
+        while (timestamp + offset) % bid != 0:
             timestamp += mult
         mult *= bid
     return timestamp
