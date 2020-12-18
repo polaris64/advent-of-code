@@ -3,53 +3,46 @@ def read_input(fname):
         return [x.strip() for x in handle.readlines()]
 
 
+def single_char(inp, matches):
+    for idx, ch in enumerate(inp):
+        if ch == " ":
+            continue
+        if ch in matches:
+            return (ch, inp[idx + 1:])
+        else:
+            return (None, inp)
+    return (None, inp)
+
+
 def number(inp):
     res = ""
+    last_idx = 0
     for idx, ch in enumerate(inp):
         if ch == " ":
             continue
         if ch.isnumeric():
             res += ch
         else:
-            if res.isnumeric():
-                return (int(res), inp[idx:])
-            else:
-                return (None, inp)
+            break
+        last_idx = idx
     if res.isnumeric():
-        return (int(res), "")
+        return (int(res), inp[last_idx + 1:])
     else:
         return (None, inp)
 
 
 def operator(inp):
-    for idx, ch in enumerate(inp):
-        if ch == " ":
-            continue
-        if ch in ["+", "-", "*", "/"]:
-            return (ch, inp[idx+1:])
-        else:
-            return (None, inp[idx+1:])
-    return (None, inp)
+    return single_char(inp, ["+", "-", "*", "/"])
 
 
-def single_char(inp, target):
-    for idx, ch in enumerate(inp):
-        if ch == " ":
-            continue
-        if ch == target:
-            return (ch, inp[idx+1:])
-        else:
-            return (None, inp)
-    return (None, inp)
-
-
-def eval_expr(inp, pre=""):
+def eval_expr(inp):
     acc = 0
-
     rest = inp
-    oparen, rest = single_char(rest, "(")
+
+    oparen, rest = single_char(rest, ["("])
     if oparen is not None:
-        acc, rest = eval_expr(rest, pre + "  ")
+        acc, rest = eval_expr(rest)
+        _, rest = single_char(rest, [")"])
     else:
         num, rest = number(rest)
         if num is None:
@@ -60,28 +53,29 @@ def eval_expr(inp, pre=""):
         op, rest = operator(rest)
         if op is None:
             break
-        oparen, rest = single_char(rest, "(")
+        oparen, rest = single_char(rest, ["("])
         if oparen is not None:
-            num, rest = eval_expr(rest, pre + "  ")
+            num, rest = eval_expr(rest)
+            _, rest = single_char(rest, [")"])
         else:
             num, rest = number(rest)
             if num is None:
                 break
-        acc = eval_op(acc, op, num, pre)
+        acc = eval_op(acc, op, num)
 
     return (acc, rest)
 
 
-def eval_op(n1, op, n2, pre):
-    if op == "+": return n1 + n2
-    if op == "-": return n1 - n2
-    if op == "*": return n1 * n2
-    if op == "/": return n1 / n2
+def eval_op(n1, op, n2):
+    if op == "+":
+        return n1 + n2
+    if op == "-":
+        return n1 - n2
+    if op == "*":
+        return n1 * n2
+    if op == "/":
+        return n1 / n2
     return None
-
-
-def create_ast(inp):
-    return ast_expr(inp)
 
 
 def ast_expr(inp):
@@ -102,7 +96,7 @@ def ast_prod(inp):
         res_n1, rest = ast_term(rest)
         if res_n1 is None:
             return (None, inp)
-    res_op, rest = single_char(rest, "*")
+    res_op, rest = single_char(rest, ["*", "/"])
     if res_op is None:
         return (None, inp)
     res_n2, rest = ast_prod(rest)
@@ -112,7 +106,7 @@ def ast_prod(inp):
             res_n2, rest = ast_term(rest)
             if res_n2 is None:
                 return (None, inp)
-    return (("prod", res_n1, res_op, res_n2), rest)
+    return (("binop", res_n1, res_op, res_n2), rest)
 
 
 def ast_sum(inp):
@@ -120,7 +114,7 @@ def ast_sum(inp):
     res_n1, rest = ast_term(rest)
     if res_n1 is None:
         return (None, inp)
-    res_op, rest = single_char(rest, "+")
+    res_op, rest = single_char(rest, ["+", "-"])
     if res_op is None:
         return (None, inp)
     res_n2, rest = ast_sum(rest)
@@ -128,18 +122,18 @@ def ast_sum(inp):
         res_n2, rest = ast_term(rest)
         if res_n2 is None:
             return (None, inp)
-    return (("sum", res_n1, res_op, res_n2), rest)
+    return (("binop", res_n1, res_op, res_n2), rest)
 
 
 def ast_subexpr(inp):
     rest = inp
-    res, rest = single_char(rest, "(")
+    res, rest = single_char(rest, ["("])
     if res is None:
         return (None, inp)
     res_expr, rest = ast_expr(rest)
     if res_expr is None:
         return (None, inp)
-    res, rest = single_char(rest, ")")
+    res, rest = single_char(rest, [")"])
     if res is None:
         return (None, inp)
     return (res_expr, rest)
@@ -159,16 +153,13 @@ def ast_term(inp):
 def eval_ast(ast):
     if type(ast) == int:
         return ast
-    if ast[0] == "prod":
-        return eval_ast(ast[1]) * eval_ast(ast[3])
-    elif ast[0] == "sum":
-        return eval_ast(ast[1]) + eval_ast(ast[3])
-    else:
-        return None
+    if ast[0] == "binop":
+        return eval_op(eval_ast(ast[1]), ast[2], eval_ast(ast[3]))
+    return None
 
 
 def parse_and_eval(expr):
-    ast = create_ast(expr)
+    ast = ast_expr(expr)
     if ast[1] != "":
         return None
     return eval_ast(ast[0])
