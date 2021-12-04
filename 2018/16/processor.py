@@ -1,0 +1,18 @@
+opcodes = {
+    "addr": lambda state, a, b: state[a] + state[b],
+    "addi": lambda state, a, b: state[a] + b,
+    "mulr": lambda state, a, b: state[a] * state[b],
+    "muli": lambda state, a, b: state[a] * b,
+    "banr": lambda state, a, b: state[a] & state[b],
+    "bani": lambda state, a, b: state[a] & b,
+    "borr": lambda state, a, b: state[a] | state[b],
+    "bori": lambda state, a, b: state[a] | b,
+    "setr": lambda state, a, b: state[a],
+    "seti": lambda state, a, b: a,
+    "gtir": lambda state, a, b: 1 if a > state[b] else 0,
+    "gtri": lambda state, a, b: 1 if state[a] > b else 0,
+    "gtrr": lambda state, a, b: 1 if state[a] > state[b] else 0,
+    "eqir": lambda state, a, b: 1 if a == state[b] else 0,
+    "eqri": lambda state, a, b: 1 if state[a] == b else 0,
+    "eqrr": lambda state, a, b: 1 if state[a] == state[b] else 0,
+}
