@@ -12,29 +12,39 @@ def get_neighbours(cell, inp):
             neighbours.append((nx, ny))
     return neighbours
 
-def dijkstra(inp, start, goal):
-    nodes = dict()
-    for y, row in enumerate(inp):
+def reconstruct_path(came_from, current):
+    total_path = [current]
+    while current in came_from.keys():
+        current = came_from[current]
+        total_path.append(current)
+    total_path.reverse()
+    return total_path
+
+def astar(grid, start_pos, goal_pos):
+    open_set = set([start_pos])
+    came_from = dict()
+
+    def h(cell):
+        return abs(goal_pos[0] - cell[0]) + abs(goal_pos[1] - cell[1])
+
+    g_score = dict()
+    for y, row in enumerate(grid):
         for x, _ in enumerate(row):
-            nodes[(x, y)] = 9999999
-    nodes[start] = 0
-    curr = start
+            g_score[(x, y)] = 9999999
+    g_score[start_pos] = 0
 
-    visited = dict()
-
-    while len(nodes) > 0:
-        if curr == goal:
-            visited[curr] = nodes.pop(curr)
-            break
-        for n in get_neighbours(curr, inp):
-            if n not in visited:
-                tentative_distance = nodes[curr] + inp[n[1]][n[0]]
-                if nodes[n] > tentative_distance:
-                    nodes[n] = tentative_distance
-        visited[curr] = nodes.pop(curr)
-        curr = min(nodes.items(), key=lambda x: x[1])[0]
-
-    return visited
+    while len(open_set) > 0:
+        current = min([(g_score[c] + h(c), c) for c in open_set])[1]
+        if current == goal_pos:
+            return reconstruct_path(came_from, current)
+        open_set.remove(current)
+        for n in get_neighbours(current, grid):
+            tent_g_score = g_score[current] + grid[n[1]][n[0]]
+            if tent_g_score < g_score[n]:
+                came_from[n] = current
+                g_score[n] = tent_g_score
+                if n not in open_set:
+                    open_set.add(n)
 
 def render_grid(inp, path):
     res = ""
@@ -45,8 +55,8 @@ def render_grid(inp, path):
     return res
 
 def solve_p1(inp):
-    goal = (len(inp[0]) - 1, len(inp) - 1)
-    return dijkstra(inp, (0, 0), goal)[goal]
+    path = astar(inp, (0, 0), (len(inp[0]) - 1, len(inp) - 1))
+    return sum([inp[y][x] for x, y in path if not (x == 0 and y == 0)])
 
 def solve_p2(inp):
     return None
