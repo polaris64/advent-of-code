@@ -2,13 +2,30 @@ def read_input(filename):
     with open(filename, "rt") as fh:
         return [[int(x) for x in line.strip()] for line in fh.readlines()]
 
-def get_neighbours(cell, inp):
+def gen_grid(inp, mul = (1, 1)):
+    for y in range(len(inp) * mul[1]):
+        row = []
+        y_norm = y % len(inp)
+        for x in range(len(inp[0]) * mul[0]):
+            if x < len(inp[0]) and y < len(inp):
+                num = inp[y][x]
+            else:
+                src_num = inp[y_norm][x % len(inp[0])] - 1
+                num = src_num
+                num += (y // len(inp))
+                num += (x // len(inp[0]))
+                num = num % 9
+                num += 1
+            row.append(num)
+        yield row
+
+def get_neighbours(cell, inp, mul = (1, 1)):
     neighbours = []
     offsets = ((-1, 0), (0, -1), (1, 0), (0, 1))
     for ox, oy in offsets:
         nx = cell[0] + ox
         ny = cell[1] + oy
-        if nx >= 0 and ny >= 0 and nx < len(inp[0]) and ny < len(inp):
+        if nx >= 0 and ny >= 0 and nx < len(inp[0]) * mul[0] and ny < len(inp) * mul[1]:
             neighbours.append((nx, ny))
     return neighbours
 
@@ -54,12 +71,16 @@ def render_grid(inp, path):
         res += "\n"
     return res
 
+def get_least_risky_path(inp, size_mul):
+    grid = list(gen_grid(inp, size_mul))
+    path = astar(grid, (0, 0), (len(grid[0]) - 1, len(grid) - 1))
+    return sum([grid[y][x] for x, y in path if not (x == 0 and y == 0)])
+
 def solve_p1(inp):
-    path = astar(inp, (0, 0), (len(inp[0]) - 1, len(inp) - 1))
-    return sum([inp[y][x] for x, y in path if not (x == 0 and y == 0)])
+    return get_least_risky_path(inp, (1, 1))
 
 def solve_p2(inp):
-    return None
+    return get_least_risky_path(inp, (5, 5))
 
 def main():
     inp = read_input("input.txt")
@@ -69,12 +90,12 @@ def main():
 def test_main():
     inp = read_input("input.txt")
     assert solve_p1(inp) == 609
-    assert solve_p2(inp) == None
+    assert solve_p2(inp) == 2925
 
 def test_ex():
     inp = read_input("input_ex.txt")
     assert solve_p1(inp) == 40
-    assert solve_p2(inp) == None
+    assert solve_p2(inp) == 315
 
 if __name__ == '__main__':
     main()
