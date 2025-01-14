@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def read_input(filename):
     with open(filename, "r") as fh:
         return parse_input([line.strip() for line in fh.readlines()])
@@ -44,7 +47,7 @@ def parse_input(lines):
     return ctx["res"]
 
 
-def run_round(inp):
+def run_round(inp, do_divide=True, lcm=None):
     for mid, monkey in inp.items():
         items_copy = monkey["items"].copy()
         for item_id, item in enumerate(items_copy):
@@ -56,7 +59,11 @@ def run_round(inp):
             elif op[1] == "*":
                 items_copy[item_id] = a * b
 
-            items_copy[item_id] //= 3
+            if do_divide:
+                items_copy[item_id] //= 3
+            elif lcm is not None:
+                if items_copy[item_id] > lcm:
+                    items_copy[item_id] %= lcm
 
             monkey["insp"] += 1
 
@@ -71,20 +78,27 @@ def run_round(inp):
     return inp
 
 
-def play(inp):
-    for r in range(20):
-        run_round(inp)
+def play(inp, rounds, do_divide=True, lcm=None):
+    for r in range(rounds):
+        run_round(inp, do_divide, lcm)
     return inp
 
 
+def find_lcm(inp):
+    return np.lcm.reduce([x["test"][1] for x in inp.values()])
+
+
 def solve_p1(inp):
-    res = play(inp)
+    res = play(inp, 20, True)
     monkeys = sorted(res.values(), key=lambda m: m["insp"])[-2:]
     return monkeys[0]["insp"] * monkeys[1]["insp"]
 
 
 def solve_p2(inp):
-    return None
+    lcm = find_lcm(inp)
+    res = play(inp, 10000, False, lcm)
+    monkeys = sorted(res.values(), key=lambda m: m["insp"])[-2:]
+    return monkeys[0]["insp"] * monkeys[1]["insp"]
 
 
 def main():
@@ -96,13 +110,15 @@ def main():
 def test_ex():
     inp = read_input("input_ex.txt")
     assert solve_p1(inp) == 10605
-    # assert solve_p2(inp) == 0
+    inp = read_input("input_ex.txt")
+    assert solve_p2(inp) == 2713310158
 
 
 def test_main():
     inp = read_input("input.txt")
     assert solve_p1(inp) == 117624
-    # assert solve_p2(inp) == 0
+    inp = read_input("input.txt")
+    assert solve_p2(inp) == 16792940265
 
 
 if __name__ == '__main__':
