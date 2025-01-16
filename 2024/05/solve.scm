@@ -117,4 +117,4 @@
           (error "Part 1 solution is incorrect: 5509 !=" p1))
       (format (current-output-port) "The solution to part 2 is: ~a~%" p2)
       (if (not (= 4407 p2))
-          (error "Part 2 solution is incorrect: 4407 !=" p1)))))
+          (error "Part 2 solution is incorrect: 4407 !=" p2)))))
