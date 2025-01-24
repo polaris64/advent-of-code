@@ -19,12 +19,12 @@
   (let ((res (fold (λ (v a)
                      (cons (not (car a))
                            (cons 
-                            (if (car a) (append (cadr a) (list v)) (cadr a))
-                            (if (not (car a)) (append (cddr a) (list v)) (cddr a)))))
+                            (if (car a) (cons v (cadr a)) (cadr a))
+                            (if (not (car a)) (cons v (cddr a)) (cddr a)))))
                    (cons #t (cons (list) (list))) 
-                   (map (compose string->number string)
-                        (filter (λ (ch) (not (eq? #\newline ch)))
-                                (string->list inp-str))))))
+                   (reverse (map (compose string->number string)
+                                 (filter (λ (ch) (not (eq? #\newline ch)))
+                                         (string->list inp-str)))))))
     (values (cadr res)
             (cddr res))))
 
