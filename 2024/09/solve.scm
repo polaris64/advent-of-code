@@ -67,6 +67,10 @@
           (iter i1 i2))))
   (iter 0 (1- (vector-length block-map))))
 
+(define (get-largest-file-id block-map)
+  (let ((idx (get-last-non-empty-block-idx block-map (1- (vector-length block-map)))))
+    (vector-ref block-map idx)))
+
 (define (get-first-empty-block-idx block-map start-idx)
   (define (iter idx)
     (cond ((empty-block? (vector-ref block-map idx)) idx)
@@ -81,14 +85,63 @@
           (else (iter (1- idx)))))
   (iter start-idx))
 
+(define (get-file-start-idx block-map file-id)
+  (define (iter idx)
+    (cond ((= idx (vector-length block-map)) #f)
+          ((eq? (vector-ref block-map idx) file-id) idx)
+          (else (iter (1+ idx)))))
+  (iter 0))
+
+(define (get-span-length block-map start-idx v)
+  (cond ((= (vector-length block-map) start-idx) 0)
+        ((not (eq? (vector-ref block-map start-idx) v)) 0)
+        (else (+ 1 (get-span-length block-map (1+ start-idx) v)))))
+
+(define (get-span-with-length block-map start-idx v desired-length)
+  (if (>= start-idx (vector-length block-map))
+      #f
+      (let ((l (get-span-length block-map start-idx v)))
+        (if (>= l desired-length)
+            start-idx
+            (get-span-with-length block-map (+ start-idx (max l 1)) v desired-length)))))
+
+(define (defragment-full-blocks block-map)
+  (let ((largest-file-id (get-largest-file-id block-map)))
+    (define (iter free-idx file-idx last-file-id)
+      (if (< last-file-id 0)
+          (vector->list block-map)
+          (let* ((curr-file-length (get-span-length block-map file-idx last-file-id))
+                 (free-block-idx (get-span-with-length block-map free-idx #\. curr-file-length)))
+
+            ;; Swap file and free blocks
+            (when (and free-block-idx (< free-block-idx file-idx))
+              (for-each (λ (idx)
+                          (vector-set! block-map (+ idx file-idx) #\.)
+                          (vector-set! block-map (+ idx free-block-idx) last-file-id))
+                        (range 0 curr-file-length)))
+
+            (iter 0
+                  (get-file-start-idx block-map (1- last-file-id))
+                  (1- last-file-id)))))
+
+    (iter (get-first-empty-block-idx block-map 0)
+          (get-file-start-idx block-map largest-file-id)
+          largest-file-id)))
+
+(define (defragment-and-checksum defrag-fn block-map)
+  (let ((res (defrag-fn block-map)))
+
+    (apply + (map (λ (idx v)
+                    (if (not (eq? #\. v))
+                        (* idx v)
+                        0))
+                  (range 0 (length res)) res))))
+
 (define (solve-p1 inp)
-  (let ((res (filter (compose not empty-block?)
-                     (defragment
-                       (parse-and-extract inp)))))
-    (apply + (map (λ (idx v) (* idx v)) (range 0 (length res)) res))))
+  (defragment-and-checksum defragment (parse-and-extract inp)))
 
 (define (solve-p2 inp)
-  #f)
+  (defragment-and-checksum defragment-full-blocks (parse-and-extract inp)))
 
 (define (compare-results part actual expected)
   (when (not (equal? actual expected))
@@ -104,9 +157,9 @@
 
 (define (run-tests)
   (report-and-compare-results 1 (solve-p1 test-input) 1928)
-  (report-and-compare-results 2 (solve-p2 test-input) #f))
+  (report-and-compare-results 2 (solve-p2 test-input) 2858))
 
 (define (run)
   (let ((inp-str (read-input)))
     (report-and-compare-results 1 (solve-p1 inp-str) 6421128769094)
-    (report-and-compare-results 2 (solve-p2 inp-str) #f)))
+    (report-and-compare-results 2 (solve-p2 inp-str) 6448168620520)))
