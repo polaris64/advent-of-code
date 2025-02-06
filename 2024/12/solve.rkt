@@ -330,7 +330,7 @@ OOOOO
            (map (λ (edge)
                   (cond ((eq? 'T (span-direction edge))
                          (translate
-                          (red
+                          (orange
                            (hline (- (* scale (pos-x (span-end edge)))
                                      (* scale (pos-x (span-start edge))))
                                   0))
@@ -338,7 +338,7 @@ OOOOO
                           (* scale (pos-y (span-start edge)))))
                         ((eq? 'B (span-direction edge))
                          (translate
-                          (green
+                          (orange
                            (hline (- (* scale (pos-x (span-end edge)))
                                      (* scale (pos-x (span-start edge))))
                                   0))
@@ -346,7 +346,7 @@ OOOOO
                           (* scale (pos-y (span-start edge)))))
                         ((eq? 'L (span-direction edge))
                          (translate
-                          (blue
+                          (orange
                            (vline 0
                                   (- (* scale (pos-y (span-end edge)))
                                      (* scale (pos-y (span-start edge))))))
