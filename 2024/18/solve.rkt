@@ -193,14 +193,21 @@
             (else (iter (+ 1 idx) max-len))))
     (iter offset (vector-length cells))))
 
-(define (solve-p2 inp num-bytes grid-size)
-  (let* ((parsed-inp (parse-input inp))
-         (all-cells (map car parsed-inp))
+(define (binary-search start end test)
+  (let* ((idx (+ start (truncate (/ (- end start) 2))))
+         (res (test idx)))
+    (cond ((and (= start end) res) start)
+          ((and (= start end) (not res)) #f)
+          (res (binary-search start (- idx 1) test))
+          ((not res) (binary-search (+ idx 1) end test)))))
+
+(define (get-first-blocking-byte-using-shortest-path inp num-bytes grid-size)
+  (let* ((all-cells (map car inp))
          (start-pos (make-vec 0 0))
          (end-pos grid-size))
 
     (define (iter num-bytes)
-      (let* ((cells (make-cell-hash parsed-inp num-bytes))
+      (let* ((cells (make-cell-hash inp num-bytes))
              (path (a-star cells
                            start-pos
                            end-pos
@@ -209,7 +216,7 @@
                              (abs (- (vec-x end-pos) (vec-x p)))
                              (abs (- (vec-y end-pos) (vec-y p)))))))
         (if (not path)
-            (let ((byte-pos (car (list-ref parsed-inp (- num-bytes 1)))))
+            (let ((byte-pos (car (list-ref inp (- num-bytes 1)))))
               (string-join (list (number->string (vec-x byte-pos))
                                  (number->string (vec-y byte-pos)))
                            ","))
@@ -221,6 +228,41 @@
                   (iter (+ 1 num-bytes)))))))
 
     (iter num-bytes)))
+
+(define (get-first-blocking-byte-using-binary-search inp num-bytes grid-size)
+  (let* ((all-cells (map car inp))
+         (start-pos (make-vec 0 0))
+         (end-pos grid-size))
+
+    (let ((res (binary-search num-bytes
+                              (length all-cells)
+                              (λ (idx)
+                                (let ((cells (make-cell-hash inp idx)))
+                                  (not
+                                   (a-star cells
+                                           start-pos
+                                           end-pos
+                                           grid-size
+                                           (λ (p)
+                                             (abs (- (vec-x end-pos) (vec-x p)))
+                                             (abs (- (vec-y end-pos) (vec-y p)))))))))))
+      (if res
+          (let ((byte-pos (car (list-ref inp (- res 1)))))
+            (string-join (list (number->string (vec-x byte-pos))
+                               (number->string (vec-y byte-pos)))
+                         ","))
+          res))))
+
+(define (solve-p2 inp num-bytes grid-size)
+
+  ;; Works, but slower
+  ;; (get-first-blocking-byte-using-shortest-path (parse-input inp)
+  ;;                                              num-bytes
+  ;;                                              grid-size)
+
+  (get-first-blocking-byte-using-binary-search (parse-input inp)
+                                               num-bytes
+                                               grid-size))
 
 (define (compare-results part actual expected)
   (when (not (equal? actual expected))
