@@ -1,5 +1,8 @@
 #lang racket
 
+(module+ test
+  (require rackunit))
+
 (define test-input "r, wr, b, g, bwu, rb, gb, br
 
 brwrr
@@ -68,23 +71,22 @@ bbrgwb
   (let-values (((patterns designs) (parse-input inp)))
     (apply + (map (λ (design) (get-design-combinations design patterns)) designs))))
 
-(define (compare-results part actual expected)
-  (when (not (equal? actual expected))
-    (error (format "Part ~a: solution is not correct: ~a != ~a" part actual expected)))
-  actual)
+(module+ test
+  (check-eq? (solve-p1 test-input) 6)
+  (check-eq? (solve-p2 test-input) 16)
+  (check-eq? (solve-p1 (read-input)) 350)
+  (check-eq? (solve-p2 (read-input)) 769668867512623))
 
 (define (report-result part result)
   (printf "The solution to part ~a is: ~a~%" part result))
 
-(define (report-and-compare-results part actual expected)
-  (report-result part actual)
-  (compare-results part actual expected))
-
 (define (run-tests)
-  (report-and-compare-results 1 (solve-p1 test-input) 6)
-  (report-and-compare-results 2 (solve-p2 test-input) 16))
+  (report-result 1 (solve-p1 test-input))
+  (report-result 2 (solve-p2 test-input)))
 
 (define (run)
   (let ((inp (read-input)))
-    (report-and-compare-results 1 (solve-p1 inp) 350)
-    (report-and-compare-results 2 (solve-p2 inp) 769668867512623)))
+    (report-result 1 (solve-p1 inp))
+    (report-result 2 (solve-p2 inp))))
+
+(run)
