@@ -1,3 +1,11 @@
+(defpackage :p64/aoc/2025/01
+  (:use :cl)
+  (:export #:read-input
+           #:solve-p1
+           #:solve-p2))
+
+(in-package :p64/aoc/2025/01)
+
 (defun read-input (filename)
   (with-open-file (s filename
                      :direction :input)
@@ -54,13 +62,4 @@
     (format t "The solution to part 1 is: ~a~%" (solve-p1 inp))
     (format t "The solution to part 2 is: ~a~%" (solve-p2 inp))))
 
-(defun run-tests ()
-  (let ((inp (read-input "input_ex.txt")))
-    (assert (= (solve-p1 inp) 3))
-    (assert (= (solve-p2 inp) 6)))
-  (let ((inp (read-input "input.txt")))
-    (assert (= (solve-p1 inp) 1074))
-    (assert (= (solve-p2 inp) 6254))))
-
 (run)
-(run-tests)
