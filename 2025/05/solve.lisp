@@ -48,24 +48,32 @@
         when (range-overlaps-p range r)
           return r))
 
-(defun combine-all-ranges (ranges)
-  (let ((new-ranges (list (car ranges))))
-    (loop for r in (cdr ranges)
-          collect (let ((overlapping-range (get-overlapping-range new-ranges r)))
-                    (cond (overlapping-range (let ((combined (combine-ranges overlapping-range r)))
-                                               (setf (car overlapping-range) (car combined))
-                                               (setf (cdr overlapping-range) (cdr combined))))
-                          (t (setf new-ranges (cons r new-ranges))))))
-    new-ranges))
+;; This is an alternative implementation of combine-all-ranges using
+;; dolist instead of loop
+#+nil
+(defun combine-all-ranges-via-dolist (ranges)
+  (let ((result nil)
+        (sorted (sort (copy-list ranges) #'< :key #'car)))
+    (dolist (r sorted result)
+      (let ((last (car result)))
+        (if (and last (<= (car r) (cdr last)))
+            (setf (cdr last) (max (cdr last) (cdr r)))
+            (push (cons (car r) (cdr r)) result))))))
 
-(defun combine-all-ranges-recursive (ranges)
-  (let ((prev nil)
-        (new ranges))
-    (loop while (set-exclusive-or new prev :test #'equal)
-          do (let ((combined (combine-all-ranges new)))
-               (setf prev new)
-               (setf new combined)))
-    new))
+(defun combine-all-ranges (ranges)
+  (let ((result nil)
+        (sorted (sort (copy-list ranges) #'< :key #'car)))
+    (loop for (start . end) in sorted
+          for last = (car result)
+          do
+             ;; If there is a last range and the start of this range
+             ;; is <= the end of the last range, extend the end of
+             ;; the last range to the maximum end value of each,
+             ;; otherwise push this range to the result list.
+             (if (and last (<= start (cdr last)))
+                 (setf (cdr last) (max (cdr last) end))
+                 (push (cons start end) result)))
+    result))
 
 (defun count-range (range)
   (1+ (- (cdr range) (car range))))
@@ -81,7 +89,7 @@
           count 1))
 
 (defun solve-p2 (ranges)
-  (count-all-ranges (combine-all-ranges-recursive ranges)))
+  (count-all-ranges (combine-all-ranges ranges)))
 
 (defun run ()
   (multiple-value-bind (ranges ingredients) (read-input "input.txt")
