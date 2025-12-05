@@ -48,10 +48,10 @@
         when (range-overlaps-p range r)
           return r))
 
-;; This is an alternative implementation of combine-all-ranges using
-;; dolist instead of loop
+;; NOTE: for didactic reasons there are three implementations of combine-all-ranges
+
 #+nil
-(defun combine-all-ranges-via-dolist (ranges)
+(defun combine-all-ranges (ranges)
   (let ((result nil)
         (sorted (sort (copy-list ranges) #'< :key #'car)))
     (dolist (r sorted result)
@@ -60,6 +60,7 @@
             (setf (cdr last) (max (cdr last) (cdr r)))
             (push (cons (car r) (cdr r)) result))))))
 
+#+nil
 (defun combine-all-ranges (ranges)
   (let ((result nil)
         (sorted (sort (copy-list ranges) #'< :key #'car)))
@@ -74,6 +75,39 @@
                  (setf (cdr last) (max (cdr last) end))
                  (push (cons start end) result)))
     result))
+
+(defun combine-all-ranges (ranges)
+  ;; Recursive function: track `current' (the current range which may
+  ;; be expanded)
+  (labels ((rec (current rest)
+
+             (cond
+
+               ;; `rest' is empty: return a list containing the
+               ;; `current' range
+               ((null rest) (list current))
+
+               (t
+                (let* ((r (car rest))
+                       (r-start (car r))
+                       (r-end (cdr r))
+                       (curr-start (car current))
+                       (curr-end (cdr current)))
+
+                  (if (<= r-start curr-end)
+
+                      ;; `current' and `r' overlap: recurse using an
+                      ;; expanded `current' range and the rest of the
+                      ;; ranges
+                      (rec (cons curr-start (max curr-end r-end))
+                           (cdr rest))
+
+                      ;; No overlap: fix `current' in the result and
+                      ;; recurse on the rest
+                      (cons current (rec r (cdr rest)))))))))
+
+    (let ((sorted (sort (copy-list ranges) #'< :key #'car)))
+      (rec (car sorted) (cdr sorted)))))
 
 (defun count-range (range)
   (1+ (- (cdr range) (car range))))
